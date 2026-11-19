@@ -35,6 +35,24 @@ function jobs(book,d,p){
   }
   return reply(d.action==='poll'?{}:{ok:false});
 }
+function siteJob(book,d){
+  const q=book.getSheetByName('Запросы МХ');
+  if(!q || !/^[a-f0-9-]{36}$/.test(d.batch)) throw Error('Проверьте setup и номер запроса');
+  const records=q.getDataRange().getDisplayValues().filter(r=>r[5]===d.batch && r[0]===d.warehouse);
+  if(!records.length && d.action==='enqueue'){
+    const cells=[];
+    for(let rack=2;rack<=10;rack++)for(let shelf=1;shelf<=5;shelf++)for(let slot=1;slot<=3;slot++)
+      cells.push([rack,shelf,slot].map(n=>String(n).padStart(2,'0')).join('.'));
+    if(d.cell && !cells.includes(d.cell)) throw Error('Адрес вне диапазона склада');
+    const items=(d.cell?[d.cell]:cells).map(cell=>[d.warehouse,cell,'','','',d.batch]);
+    q.getRange(q.getLastRow()+1,1,items.length,6).setValues(items);
+    return reply({total:items.length,done:0,failed:0});
+  }
+  const failed=records.filter(r=>r[2].startsWith('Ошибка'));
+  return reply({total:records.length,done:records.filter(r=>r[2]==='Готово').length,
+    active:records.find(r=>r[2]==='Проверяется')?.[1]||'',failed:failed.length,
+    error:failed.length?failed[0][1]+' · '+failed[0][2]:''});
+}
 function doPost(e) {
   const p=PropertiesService.getScriptProperties(), d=JSON.parse(e.postData.contents);
   if(!p.getProperty('key') || d.key!==p.getProperty('key') || !/^\d+$/.test(d.warehouse)) throw Error('Доступ закрыт');
@@ -43,6 +61,7 @@ function doPost(e) {
   lock.waitLock(30000);
   try {
     const book=SpreadsheetApp.openById(p.getProperty('sheet'));
+    if(['enqueue','progress'].includes(d.action))return siteJob(book,d);
     if(d.action==='stock'){
       const tab=book.getSheetByName('ПФЦ '+d.warehouse+' — сверка');
       const rows=tab && tab.getLastRow()>1 ? tab.getRange(2,1,tab.getLastRow()-1,5).getValues().filter(row=>row[0]) : [];

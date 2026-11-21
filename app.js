@@ -791,16 +791,17 @@
     var total=Number(p.total)||0, completed=Number(p.completed)||0, failed=Number(p.failed)||0;
     var percent=total?Math.min(100,Math.round((completed+failed)/total*100)):0;
     var status = job.status || 'ожидание';
+    if(status==='Завершено' && failed)status=completed?'Завершено с ошибками':'Ошибка проверки';
     var active = /выполняется|ожидает рабочего компьютера|приостановлена|запрошена пауза|запрошено продолжение|запрошена остановка/i.test(status);
     remoteJobActive = active;
     setRemoteText('remoteJobStatus','Состояние: '+status);
-    setRemoteText('remoteProgressText',completed+' / '+total+' ('+percent+'%)');
+    setRemoteText('remoteProgressText','Обработано '+(completed+failed)+' / '+total+' ('+percent+'%)');
     if(byId('remoteProgressBar')) byId('remoteProgressBar').style.width=percent+'%';
     setRemoteText('remoteCompleted',completed);
     setRemoteText('remoteFailed',failed);
     setRemoteText('remoteCurrentCell',p.currentCell||'—');
     setRemoteText('overviewRemoteJobStatus','Состояние: '+status);
-    setRemoteText('overviewRemoteProgressText',completed+' / '+total+' ('+percent+'%)');
+    setRemoteText('overviewRemoteProgressText','Обработано '+(completed+failed)+' / '+total+' ('+percent+'%)');
     if(byId('overviewRemoteProgressBar')) byId('overviewRemoteProgressBar').style.width=percent+'%';
     setRemoteText('overviewRemoteCompleted',completed);
     setRemoteText('overviewRemoteFailed',failed);
@@ -817,7 +818,7 @@
     // После полного завершения очереди перечитываем Google Sheets и обновляем все карточки обзора.
     if (job.finishedAt && job.finishedAt !== lastAutoLoadedFinish) {
       lastAutoLoadedFinish = job.finishedAt;
-      setRemoteText('overviewRemoteFeedback','Проверка завершена. Загружаем обновлённые остатки и статистику…');
+      if(!failed)setRemoteText('overviewRemoteFeedback','Проверка завершена. Загружаем обновлённые остатки и статистику…');
       loadData();
     }
   }

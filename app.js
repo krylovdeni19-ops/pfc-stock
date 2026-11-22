@@ -325,7 +325,7 @@
     host.innerHTML = visible.length ? visible.map(function (rack) {
       var shelves = Object.keys(groups[rack]).sort(function(a,b){return a.localeCompare(b,'ru',{numeric:true});});
       var rackCount = shelves.reduce(function(n,shelf){return n + groups[rack][shelf].length;},0);
-      return '<section class="map-rack"><header class="map-rack-head"><b>Стеллаж ' + escapeHtml(rack) + '</b><span>' + rackCount + ' МХ</span></header>' +
+      return '<section class="map-rack"><header class="map-rack-head"><b>' + (rack==='01'?'Паллетное хранение · стеллаж ':'Обычный стеллаж ') + escapeHtml(rack) + '</b><span>' + rackCount + ' МХ</span></header>' +
         shelves.map(function(shelf){
           var cells = groups[rack][shelf].sort(function(a,b){var ap=String(a.cell).split('.'),bp=String(b.cell).split('.');return Number(ap[2]||0)-Number(bp[2]||0);});
           return '<div class="map-shelf"><span class="map-shelf-label">Полка ' + escapeHtml(shelf) + '</span><div class="map-shelf-cells">' + cells.map(function(loc){
@@ -381,7 +381,7 @@
 
     byId('drawerContent').innerHTML =
       '<div class="drawer-kicker">БЫСТРЫЙ ПРОСМОТР МХ</div><h2 class="cell-drawer-address">' + escapeHtml(loc.cell) + '</h2>' +
-      '<p class="helper-text">Содержимое адреса хранения</p>' +
+      '<p class="helper-text">'+(cellCode.startsWith('01.01.')?'Паллетное хранение':'Обычный стеллаж')+'</p>' +
       '<div class="cell-summary-grid">' +
         '<div class="cell-summary-card"><span>Уникальных баркодов</span><b>' + barcodeCount + '</b></div>' +
         '<div class="cell-summary-card"><span>Единиц товара</span><b>' + unitCount + '</b></div>' +
@@ -555,7 +555,7 @@
     const cells=input.trim().split(/[\s,;]+/).filter(Boolean);
     if(!cells.length)throw Error('Вставьте хотя бы один адрес МХ.');
     for(const cell of cells){
-      if(!/^\d{2}\.\d{2}\.\d{2}$/.test(cell))throw Error('Проверьте адрес «'+cell+'». Образец: 02.01.03.');
+      if(!/^\d{2}\.\d{2}\.\d{2,3}$/.test(cell))throw Error('Проверьте адрес «'+cell+'». Образец: 02.01.03.');
     }
     return [...new Set(cells)];
   }

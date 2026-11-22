@@ -831,8 +831,29 @@
     if(!byId('key').value){configure();return;}
     if(sending)return;
     sending=true;
-    try {renderRemoteStatus(await request('control',{command,cell}));}
-    catch(e){for(const id of ['remoteFeedback','overviewRemoteFeedback'])setRemoteText(id,e.message);}
+    const anchor=byId('overviewRemoteJobStatus');
+    let notice=byId('scanCommandNotice');
+    if(!notice && anchor){
+      notice=document.createElement('p');
+      notice.id='scanCommandNotice';
+      notice.setAttribute('role','status');
+      anchor.before(notice);
+    }
+    if(notice){
+      notice.textContent=cell?'Отправляем запрос на проверку МХ '+cell+'…':'Отправляем команду…';
+      notice.scrollIntoView({block:'center'});
+    }
+    try {
+      const result=await request('control',{command,cell});
+      renderRemoteStatus(result);
+      if(notice && command==='start'){
+        const target=cell?'МХ '+cell:'склада';
+        notice.textContent=result.startAccepted===false
+          ? 'Проверка '+target+' уже запрошена или очередь занята. Состояние очереди: '+result.job.status+'.'
+          : result.startAccepted===true?'Запрос на проверку '+target+' принят.':'Сервер вернул состояние очереди. Для подтверждения запуска обновите Code.gs.';
+      }else if(notice)notice.textContent='';
+    }
+    catch(e){if(notice)notice.textContent='Ошибка отправки: '+e.message;for(const id of ['remoteFeedback','overviewRemoteFeedback'])setRemoteText(id,e.message);}
     finally{sending=false;}
   }
   let scanClock = {};
@@ -872,7 +893,7 @@
     setRemoteText('overviewRemoteFailed',failed);
     setRemoteText('overviewRemoteCurrentCell',p.currentCell||'—');
     var stamp=online&&result.workerAt?' Последний сигнал ПК: '+formatCheckedAt(result.workerAt)+'.':' Компьютер или Chrome не отправляет сигнал.';
-    var message=(job.message||'Ожидаем команду.')+stamp;
+    var message=(job.message||(result.pending?(p.currentCell?'Рабочий ПК проверяет '+p.currentCell+'.':'Задание в очереди. '+(online?'Ожидаем, когда расширение возьмёт МХ.':'Ожидаем подключения рабочего ПК.')):'Ожидаем команду.'))+stamp;
     setRemoteText('remoteFeedback',message);
     setRemoteText('overviewRemoteFeedback',message);
     var refresh = byId('refreshBtn');

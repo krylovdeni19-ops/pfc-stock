@@ -1120,6 +1120,7 @@ html{overscroll-behavior-x:none; -webkit-overflow-scrolling:touch}
   body.dark-theme .empty-hint{color:#aebed3}
 }
 
+ .map-modes{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}.map-modes button{font:inherit;font-weight:650;padding:9px 14px;border:1px solid #aaa6c4;border-radius:9px;background:transparent;color:inherit;cursor:pointer}.map-modes button[aria-pressed=true]{background:#5740ad;color:white;border-color:#5740ad}.map-modes span{font-variant-numeric:tabular-nums;margin-left:5px}.map-racks.pallet-view{grid-template-columns:1fr}.pallet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:7px;padding:12px}.pallet-grid .map-cell{width:100%;border-radius:5px;border-bottom:4px double currentColor}
 </style>
 
 <style>
@@ -1274,8 +1275,8 @@ body.dark-theme .remote-badge.online{background:#153b2a;color:#80e5ae}body.dark-
       </section>
 
       <section id="map" class="page">
-        <div class="page-heading"><div><div class="eyebrow">АДРЕСНАЯ СХЕМА</div><h1>Карта склада</h1><p>Компактная группировка по стеллажам, полкам и ячейкам из справочника МХ.</p></div><button class="primary-btn" id="mapRefreshBtn" type="button">↻ Обновить</button></div>
-        <article class="panel map-panel"><div class="map-toolbar"><input id="mapSearch" type="search" placeholder="Найти стеллаж или МХ…" autocomplete="off"><div class="map-total" id="mapTotal">0 адресов</div></div><div class="map-legend"><span><i class="legend-dot dot-ok"></i> Заполнена</span><span><i class="legend-dot dot-empty"></i> Пустая</span><span><i class="legend-dot dot-stale"></i> Неактуальная</span><span><i class="legend-dot dot-issue"></i> Проблема</span><span><i class="legend-dot dot-unchecked"></i> Не проверена</span></div><div id="mapCells" class="map-racks"></div><p class="helper-text">Схема строится по адресу МХ (стеллаж · полка · ячейка), а не по геометрическим координатам помещения.</p></article>
+        <div class="page-heading"><div><div class="eyebrow">АДРЕСНАЯ СХЕМА</div><h1>Карта склада</h1><p>Выберите тип хранения или найдите адрес МХ.</p></div><button class="primary-btn" id="mapRefreshBtn" type="button">↻ Обновить</button></div>
+        <article class="panel map-panel"><div class="map-modes" role="group" aria-label="Тип хранения"><button type="button" id="rackMode" aria-pressed="true">Стеллажи <span></span></button><button type="button" id="palletMode" aria-pressed="false">Паллетные места <span></span></button></div><div class="map-toolbar"><input id="mapSearch" type="search" placeholder="Найти стеллаж или МХ…" autocomplete="off"><div class="map-total" id="mapTotal">0 адресов</div></div><div class="map-legend"><span><i class="legend-dot dot-ok"></i> Заполнена</span><span><i class="legend-dot dot-empty"></i> Пустая</span><span><i class="legend-dot dot-stale"></i> Неактуальная</span><span><i class="legend-dot dot-issue"></i> Проблема</span><span><i class="legend-dot dot-unchecked"></i> Не проверена</span></div><div id="mapCells" class="map-racks"></div><p class="helper-text">Схема строится по адресу МХ (стеллаж · полка · ячейка), а не по геометрическим координатам помещения.</p></article>
       </section>
 
       <section id="sync" class="page">

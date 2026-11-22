@@ -303,11 +303,48 @@
     }).join('') : '<article class="panel empty-state"><h2>Проблем не обнаружено</h2><p>Сейчас нет адресов, отмеченных как проблемные.</p></article>';
   }
 
+  var mapMode='rack';
+  function selectMapMode(mode){
+    mapMode=mode;
+    byId('mapSearch').value='';
+    renderMap();
+  }
+  byId('rackMode').onclick=()=>selectMapMode('rack');
+  byId('palletMode').onclick=()=>selectMapMode('pallet');
+  function mapButton(loc,full){
+            var metrics = getCellMetrics(loc);
+            var rawStatus = String(loc.status || '').toLowerCase();
+            var cls = ['ok','occupied','empty','stale','issue','unchecked'].indexOf(rawStatus) >= 0 ? rawStatus : 'unchecked';
+            // Защита интерфейса на случай старого backend: заполненная ячейка не должна быть серой.
+            if (metrics.units > 0 && (cls === 'unchecked' || cls === 'empty')) cls = 'occupied';
+            return '<button type="button" class="map-cell status-' + cls + '" data-open-cell="' + escapeHtml(loc.cell) + '" title="' + escapeHtml(loc.cell + ' · ' + statusLabel(cls)) + '"><b>' + escapeHtml(full ? loc.cell : String(loc.cell).split('.')[2]) + '</b><small>' + Number(metrics.units || 0) + ' шт.</small></button>';
+  }
   function renderMap() {
     var host = byId('mapCells');
     if (!host) return;
     var query = (byId('mapSearch') && byId('mapSearch').value || '').trim().toLowerCase();
     var locations = (appData.locations || []).slice();
+    const pallets=locations.filter(loc=>loc.cell.startsWith('01.01.'));
+    byId('rackMode').querySelector('span').textContent=locations.length-pallets.length;
+    byId('palletMode').querySelector('span').textContent=pallets.length;
+    if(/^\d{2}\./.test(query))mapMode=query.startsWith('01.')?'pallet':'rack';
+    const pallet=mapMode==='pallet';
+    byId('rackMode').setAttribute('aria-pressed',String(!pallet));
+    byId('palletMode').setAttribute('aria-pressed',String(pallet));
+    host.classList.toggle('pallet-view',pallet);
+    if(pallet){
+      const sections=new Map();
+      const matches=pallets.filter(loc=>loc.cell.includes(query)).sort((a,b)=>a.cell.localeCompare(b.cell,'ru',{numeric:true}));
+      for(const loc of matches){
+        const start=Math.floor((Number(loc.cell.split('.')[2])-1)/50)*50+1;
+        if(!sections.has(start))sections.set(start,[]);
+        sections.get(start).push(loc);
+      }
+      byId('mapTotal').textContent='Найдено МХ: '+matches.length;
+      host.innerHTML=[...sections].map(([start,cells])=>'<section class="map-rack"><header class="map-rack-head"><b>Места '+String(start).padStart(2,'0')+'–'+(start+49)+'</b></header><div class="pallet-grid">'+cells.map(loc=>mapButton(loc,true)).join('')+'</div></section>').join('')||'<div class="map-no-results">Паллетные места не найдены.</div>';
+      return;
+    }
+    locations=locations.filter(loc=>!loc.cell.startsWith('01.01.'));
     var groups = {};
     locations.forEach(function (loc) {
       var parts = String(loc.cell || '').split('.');
@@ -329,12 +366,7 @@
         shelves.map(function(shelf){
           var cells = groups[rack][shelf].sort(function(a,b){var ap=String(a.cell).split('.'),bp=String(b.cell).split('.');return Number(ap[2]||0)-Number(bp[2]||0);});
           return '<div class="map-shelf"><span class="map-shelf-label">Полка ' + escapeHtml(shelf) + '</span><div class="map-shelf-cells">' + cells.map(function(loc){
-            var metrics = getCellMetrics(loc);
-            var rawStatus = String(loc.status || '').toLowerCase();
-            var cls = ['ok','occupied','empty','stale','issue','unchecked'].indexOf(rawStatus) >= 0 ? rawStatus : 'unchecked';
-            // Защита интерфейса на случай старого backend: заполненная ячейка не должна быть серой.
-            if (metrics.units > 0 && (cls === 'unchecked' || cls === 'empty')) cls = 'occupied';
-            return '<button type="button" class="map-cell status-' + cls + '" data-open-cell="' + escapeHtml(loc.cell) + '" title="' + escapeHtml(loc.cell + ' · ' + statusLabel(cls)) + '"><b>' + escapeHtml(String(loc.cell).split('.')[2] || loc.cell) + '</b><small>' + Number(metrics.units || 0) + ' шт.</small></button>';
+            return mapButton(loc,false);
           }).join('') + '</div></div>';
         }).join('') + '</section>';
     }).join('') : '<div class="map-no-results">По этому запросу адреса не найдены.</div>';

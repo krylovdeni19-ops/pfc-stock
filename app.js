@@ -80,7 +80,22 @@ function render(){
       const hint=esc(loc.cell+' · '+name(loc));
       return '<button class="mapcell '+esc(loc.status)+(loc.cell===selected?' selected':'')+'" aria-pressed="'+(loc.cell===selected)+'" aria-label="'+hint+'" title="'+hint+'" data-cell="'+esc(loc.cell)+'">'+esc(label)+' <small>'+esc(name(loc).split(' ')[0])+'</small></button>';
     };
-    $('results').innerHTML='<div class="rackgrid">'+[...groups].map(([group,cells])=>'<section class="rackcard"><h3>'+esc(group)+'</h3><div class="mapcells">'+cells.map(cellButton).join('')+'</div></section>').join('')+'</div>';
+    const racks=[...groups].map(([group,cells])=>{
+      if(cells[0].cell.startsWith('01.')){
+        return '<section class="rackcard"><h3>'+esc(group)+'</h3><div class="mapcells">'+cells.map(cellButton).join('')+'</div></section>';
+      }
+      const levels=new Map();
+      for(const loc of cells){
+        const shelf=loc.cell.split('.')[1];
+        if(!levels.has(shelf))levels.set(shelf,[]);
+        levels.get(shelf).push(loc);
+      }
+      const tiers=[...levels].reverse().map(([shelf,slots])=>
+        '<div class="tier"><span class="tier-no" title="Полка '+esc(shelf)+'">'+esc(shelf)+'</span><div class="tier-slots">'+slots.map(cellButton).join('')+'</div></div>'
+      ).join('');
+      return '<section class="mini-rack"><h3>'+esc(group)+'</h3><div class="rack-frame">'+tiers+'</div></section>';
+    });
+    $('results').innerHTML='<div class="rackgrid mini-grid">'+racks.join('')+'</div>';
   }else{
     $('results').innerHTML='<table><thead><tr><th>МХ</th><th>Состояние</th><th>БК</th><th>Шт.</th></tr></thead><tbody>'+rows.map(({loc,matches,qty})=>{
       const known=loc.checked && loc.checked!=='—';

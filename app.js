@@ -551,9 +551,32 @@
     try { await readStock(); sessionStorage.setItem('stock-connection',JSON.stringify([byId('url').value.trim(),byId('key').value])); dialog.close(); pollRemoteStatus(); }
     catch (error) { byId('feedback').textContent = error.message; }
   };
+  function parseWarehouseCells(input) {
+    const cells=input.trim().split(/[\s,;]+/).filter(Boolean);
+    if(!cells.length)throw Error('Вставьте хотя бы один адрес МХ.');
+    for(const cell of cells){
+      if(!/^\d{2}\.\d{2}\.\d{2}$/.test(cell))throw Error('Проверьте адрес «'+cell+'». Образец: 02.01.03.');
+    }
+    return [...new Set(cells)];
+  }
+  byId('addWarehouseCells').onclick=async function(){
+    const feedback=byId('addressImportResult');
+    const input=byId('addressImport');
+    this.disabled=true;
+    try{
+      const cells=parseWarehouseCells(input.value);
+      const result=await request('locations',{cells});
+      if(!Number.isInteger(result.total))throw Error('Сервер не подтвердил сохранение.');
+      feedback.textContent='Список сохранён. МХ в справочнике: '+result.total+'.';
+      input.value='';
+      loadData();
+    }catch(error){feedback.textContent=error.message;}
+    finally{this.disabled=false;}
+  };
   async function readStock() {
     appData = await request('dashboard');
     renderAll();
+    byId('knownCells').textContent=appData.locations.map(loc=>loc.cell).join('\n');
     const count = appData.locations.filter(loc => loc.checked !== '—').length;
     byId('coverage').textContent = 'Проверено '+count+' из '+appData.locations.length;
     byId('coverage').parentNode.nextElementSibling.firstElementChild.style.width = (100*count/(appData.locations.length||1))+'%';

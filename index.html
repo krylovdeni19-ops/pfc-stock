@@ -1297,6 +1297,14 @@ body.dark-theme .remote-badge.online{background:#153b2a;color:#80e5ae}body.dark-
           <div class="settings-connection-head"><div><h2>Общая Google Таблица</h2><p>Одна база данных для сайта и браузерного расширения. Используйте адрес веб-приложения и ключ.</p></div><span class="connection-badge" id="sheetConnectionBadge">НЕ ПОДКЛЮЧЕНА</span></div>
           <button class="primary-btn" id="configure">Подключить склад</button><p id="connectionState"></p>
 </article>
+        <article class="panel">
+          <h2>Список МХ склада</h2>
+          <label for="addressImport">Вставьте адреса из таблицы, по одному в строке</label>
+          <textarea id="addressImport" class="settings-input" rows="5" placeholder="02.01.01&#10;02.01.02" spellcheck="false"></textarea>
+          <button type="button" class="primary-btn" id="addWarehouseCells">Добавить МХ</button>
+          <p id="addressImportResult" role="status" aria-live="polite"></p>
+          <details><summary>Посмотреть известные МХ</summary><pre id="knownCells">Подключите склад</pre></details>
+        </article>
         <article class="panel settings-list"><div><b>Источник данных</b><span id="settingsDataSource">Нет подключения</span></div><div><b>Режим приложения</b><span id="settingsAppMode">—</span></div><div><b>Интеграция с WB</b><span>Через расширение, без прямых запросов сайта к WB.</span></div></article>
       </section>
     </div>

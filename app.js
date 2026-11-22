@@ -835,6 +835,15 @@
     catch(e){for(const id of ['remoteFeedback','overviewRemoteFeedback'])setRemoteText(id,e.message);}
     finally{sending=false;}
   }
+  let scanClock = {};
+  function updateScanClock(){
+    const start=Date.parse(scanClock.startedAt);
+    const end=scanClock.endedAt?Date.parse(scanClock.endedAt):Date.now();
+    const sec=Math.max(0,Math.floor((end-start)/1000));
+    const label=Number.isFinite(sec)?[Math.floor(sec/3600),Math.floor(sec/60)%60,sec%60].map(n=>String(n).padStart(2,'0')).join(':'):'—';
+    for(const id of ['remoteElapsed','overviewRemoteElapsed'])setRemoteText(id,label);
+  }
+  setInterval(updateScanClock,1000);
   function renderRemoteStatus(result) {
     if (!result) return;
     var online = !!result.workerOnline;
@@ -843,6 +852,7 @@
     var overviewBadge = byId('overviewRemoteBadge');
     if (overviewBadge) { overviewBadge.className='remote-badge '+(online?'online':'offline'); overviewBadge.textContent=online?'● РАБОЧИЙ ПК В СЕТИ':'● НЕ В СЕТИ'; }
     var job=result.job||{}, p=job.progress||{};
+    scanClock=job;updateScanClock();
     var total=Number(p.total)||0, completed=Number(p.completed)||0, failed=Number(p.failed)||0;
     var percent=total?Math.min(100,Math.round((completed+failed)/total*100)):0;
     var status = job.status || 'ожидание';

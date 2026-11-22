@@ -6,7 +6,11 @@
           <div id="generatorBlocks"></div>
           <div class="generator-actions"><button type="button" class="gen-btn gen-secondary" id="genAddBlock">＋ Добавить блок</button></div>
           <div class="generator-summary" id="genSummary">Настройте блоки стеллажей.</div>
-          <div class="generator-options">
+          <fieldset id="labelLayout"><legend>Формат этикетки</legend><div class="labelFields">
+<label>Форма<select id="shape"><option value="rectangle">Прямоугольная</option><option value="rounded">Со скруглением</option><option value="square">Квадратная</option></select></label>
+<label>Ширина, мм<input id="labelW" type="number" min="30" max="190" step="1" value="58"></label>
+<label>Высота, мм<input id="labelH" type="number" min="25" max="250" step="1" value="40"></label></div><p id="labelInfo"></p><div id="labelPreview"></div></fieldset>
+<div class="generator-options">
             <label class="gen-check"><input type="checkbox" id="genArrows" checked><span>Печатать стрелки направления</span></label>
             <label class="gen-field"><span>Номер полки, где стрелка вниз</span><input id="genDownShelf" type="number" min="1" value="5"></label>
           </div>

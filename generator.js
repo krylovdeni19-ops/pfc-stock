@@ -34,7 +34,7 @@ const byId=$;
   function genInvalidate(){
     genValues=[];['genCsv','genSaveToSheets','genPrint'].forEach(function(id){var el=byId(id);if(el)el.disabled=true;});
     if(byId('genResult'))byId('genResult').hidden=true;if(byId('genPrintArea'))byId('genPrintArea').innerHTML='';
-    genSummary();
+    genSummary();previewLabel();
   }
   function genSummary(){try{var v=genMakeValues();byId('genSummary').textContent='Будет создано '+v.length.toLocaleString('ru-RU')+' МХ · '+v[0]+' — '+v[v.length-1]+'.';}catch(e){byId('genSummary').textContent=e.message;}}
   function genGfMul(x,y){var z=0;for(var i=0;i<8;i++){if(y&1)z^=x;y>>=1;x<<=1;if(x&256)x^=0x11d;}return z;}
@@ -61,21 +61,43 @@ const byId=$;
       byId('genRows').innerHTML=genValues.map(function(v,i){return '<tr><td>'+(i+1)+'</td><td>'+v+'</td></tr>';}).join('');
       byId('genResultInfo').textContent='Создано '+genValues.length.toLocaleString('ru-RU')+' уникальных адресов.';byId('genResult').hidden=false;
       ['genCsv','genPrint','genSaveToSheets'].forEach(function(id){byId(id).disabled=false;});
-      byId('genStatus').className='gen-status ok';byId('genStatus').textContent='Готово: адреса, QR-коды и этикетки сформированы.';byId('genResult').scrollIntoView({behavior:'smooth',block:'start'});
+      previewLabel();byId('genStatus').className='gen-status ok';byId('genStatus').textContent='Готово: адреса, QR-коды и этикетки сформированы.';byId('genResult').scrollIntoView({behavior:'smooth',block:'start'});
     }catch(e){genValues=[];['genCsv','genPrint','genSaveToSheets'].forEach(function(id){byId(id).disabled=true;});byId('genPrintArea').innerHTML='';byId('genStatus').className='gen-status err';byId('genStatus').textContent=e.message;}
   }
   function genDownloadCsv(){if(!genValues.length)return;var csv='Адрес МХ\r\n'+genValues.map(function(v){return '"'+v+'"';}).join('\r\n');var a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='PFC-Analytics_места-хранения.csv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);}
+  function labelMarkup(address){
+    const arrow=byId('genArrows').checked?genArrowSvg(Number(address.split('.')[1])===Number(byId('genDownShelf').value)?'down':'up'):'';
+    return '<div class="gen-label">'+genQrSvg(address)+arrow+'<span class="gen-address">'+address+'</span></div>';
+  }
+  function previewLabel(){
+    const shape=byId('shape').value, w=byId('labelW'), h=byId('labelH');
+    h.disabled=shape==='square';
+    if(h.disabled)h.value=w.value;
+    const width=Number(w.value),height=Number(h.value);
+    const valid=width>=30 && width<=190 && height>=25 && height<=250 && Number.isInteger(width) && Number.isInteger(height);
+    byId('genPrint').disabled=!valid||!genValues.length;
+    byId('labelInfo').textContent=valid?'Образец · '+width+' × '+height+' мм':'Введите ширину 30–190 мм и высоту 25–250 мм.';
+    const preview=byId('labelPreview');
+    preview.innerHTML=valid?labelMarkup(genValues[0]||'02.01.01'):'';
+    if(valid){
+      const style=document.documentElement.style;
+      style.setProperty('--label-w',width+'mm');style.setProperty('--label-h',height+'mm');
+      style.setProperty('--label-radius',shape==='rounded'?'4mm':'0');
+      style.setProperty('--qr-side',Math.min(height-10,width-(byId('genArrows').checked?10:4))+'mm');
+    }
+    return valid;
+  }
   function genInit(){
     for(const id of ['genArrows','genDownShelf'])byId(id).addEventListener('input',genInvalidate);
+    byId('labelLayout').addEventListener('input',previewLabel);
     genRenderBlocks();byId('genAddBlock').addEventListener('click',function(){genCaptureBlocks();genBlocks.push({from:'',to:'',shelves:'',cells:''});genRenderBlocks();});
     byId('generatorBlocks').addEventListener('input',function(){genCaptureBlocks();genInvalidate();});
     byId('generatorBlocks').addEventListener('click',function(e){var del=e.target.closest('[data-gen-delete]');if(del){genCaptureBlocks();var el=del.closest('.gen-block');genBlocks.splice(Number(el.getAttribute('data-gen-index')),1);genRenderBlocks();}});
     byId('genCreate').addEventListener('click',genCreate);byId('genCsv').addEventListener('click',genDownloadCsv);
     var saveBtn=byId('genSaveToSheets');saveBtn.addEventListener('click',function(){if(!genValues.length)return;if(!config){settings();return}saveBtn.disabled=true;byId('genStatus').textContent='Сохраняю адреса в Google Таблицу…';request('locations',{cells:genValues}).then(r=>{byId('genStatus').textContent='Адресов в справочнике: '+r.total;return request('dashboard',{fresh:true}).then(inventory);}).catch(e=>byId('genStatus').textContent=e.message).finally(()=>saveBtn.disabled=!genValues.length);});
     byId('genPrint').addEventListener('click',function(){if(!genValues.length)return;
-      const arrows=byId('genArrows').checked, downShelf=Number(byId('genDownShelf').value);
-      var labels=genValues.map(function(v){var shelf=Number(v.split('.')[1]);return '<div class="gen-label">'+genQrSvg(v)+(arrows?genArrowSvg(shelf===downShelf?'down':'up'):'')+'<span class="gen-address">'+v+'</span></div>';});
-      byId('genPrintArea').innerHTML=labels.join('');window.print();});
+      if(!previewLabel())return;
+      byId('genPrintArea').innerHTML=genValues.map(labelMarkup).join('');window.print();});
   }
 genInit();
 })();

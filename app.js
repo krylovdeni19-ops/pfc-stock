@@ -74,28 +74,26 @@ function render(){
       if(!groups.has(group))groups.set(group,[]);
       groups.get(group).push(loc);
     }
-    const cellButton=loc=>{
-      const [,shelf,slot]=loc.cell.split('.');
-      const label=loc.cell.startsWith('01.')?slot:shelf+'.'+slot;
-      const hint=esc(loc.cell+' · '+name(loc));
-      return '<button class="mapcell '+esc(loc.status)+(loc.cell===selected?' selected':'')+'" aria-pressed="'+(loc.cell===selected)+'" aria-label="'+hint+'" title="'+hint+'" data-cell="'+esc(loc.cell)+'">'+esc(label)+' <small>'+esc(name(loc).split(' ')[0])+'</small></button>';
+    const [current,cells]=[...groups].find(([,group])=>group.some(loc=>loc.cell===selected));
+    const options=[...groups].map(([title,group])=>'<option value="'+esc(group[0].cell)+'"'+(title===current?' selected':'')+'>'+esc(title)+'</option>').join('');
+    const button=loc=>{
+      const slot=loc.cell.split('.')[2],status=name(loc),hint=esc(loc.cell+' · '+status);
+      return '<button class="slot" data-cell="'+esc(loc.cell)+'" aria-pressed="'+(loc.cell===selected)+'" title="'+hint+'" aria-label="'+hint+'"><span>'+esc(slot)+'</span><small>'+esc(status.split(' ')[0])+'</small></button>';
     };
-    const racks=[...groups].map(([group,cells])=>{
-      if(cells[0].cell.startsWith('01.')){
-        return '<section class="rackcard"><h3>'+esc(group)+'</h3><div class="mapcells">'+cells.map(cellButton).join('')+'</div></section>';
-      }
-      const levels=new Map();
-      for(const loc of cells){
-        const shelf=loc.cell.split('.')[1];
-        if(!levels.has(shelf))levels.set(shelf,[]);
-        levels.get(shelf).push(loc);
-      }
-      const tiers=[...levels].reverse().map(([shelf,slots])=>
-        '<div class="tier"><span class="tier-no" title="Полка '+esc(shelf)+'">'+esc(shelf)+'</span><div class="tier-slots">'+slots.map(cellButton).join('')+'</div></div>'
-      ).join('');
-      return '<section class="mini-rack"><h3>'+esc(group)+'</h3><div class="rack-frame">'+tiers+'</div></section>';
-    });
-    $('results').innerHTML='<div class="rackgrid mini-grid">'+racks.join('')+'</div>';
+    const levels=new Map();
+    for(const loc of cells){
+      const shelf=loc.cell.split('.')[1];
+      if(!levels.has(shelf))levels.set(shelf,[]);
+      levels.get(shelf).push(loc);
+    }
+    const shelves=current.startsWith('Паллеты')?'<div class="slots pallet-slots">'+cells.map(button).join('')+'</div>':
+      [...levels].reverse().map(([shelf,slots])=>'<div class="shelf-line"><small>Полка '+esc(shelf)+'</small><div class="slots">'+slots.map(button).join('')+'</div></div>').join('');
+    $('results').innerHTML='<div class="simple-map"><select id="rackChoice" aria-label="Стеллаж или паллетная зона">'+options+'</select>'+shelves+'<small class="map-key">● Занята　○ Пуста　? Не проверена　! Ошибка</small></div>';
+    $('rackChoice').onchange=event=>{
+      selected=event.target.value;
+      render();
+      $('rackChoice').focus();
+    };
   }else{
     $('results').innerHTML='<table><thead><tr><th>МХ</th><th>Состояние</th><th>БК</th><th>Шт.</th></tr></thead><tbody>'+rows.map(({loc,matches,qty})=>{
       const known=loc.checked && loc.checked!=='—';
